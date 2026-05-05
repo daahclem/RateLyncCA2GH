@@ -1,0 +1,25 @@
+[
+  { "provider": "LemFi", "origin": "CA", "destination": "GH", "payout_method": "bank_transfer", "url": "https://lemfi.com/en-ca/", "send_amount": 1 },
+  { "provider": "Sendwave", "origin": "CA", "destination": "GH", "payout_method": "bank_transfer", "url": "https://www.sendwave.com/en-ca", "send_amount": 1 },
+  { "provider": "TapTap Send", "origin": "CA", "destination": "GH", "payout_method": "mobile_money", "url": "https://www.taptapsend.com/", "send_amount": 1 },
+  { "provider": "PayAngel", "origin": "CA", "destination": "GH", "payout_method": "bank_transfer", "url": "https://payangel.com/", "send_amount": 1 },
+  { "provider": "RemitChoice", "origin": "CA", "destination": "GH", "payout_method": "bank_transfer", "url": "https://www.remitchoice.com/", "send_amount": 1 },
+  { "provider": "RizRemit", "origin": "CA", "destination": "GH", "payout_method": "bank_transfer", "url": "https://rizremit.com/", "send_amount": 1 },
+  { "provider": "Instarem", "origin": "CA", "destination": "GH", "payout_method": "bank_transfer", "url": "https://www.instarem.com/en-ca/", "send_amount": 1 },
+  { "provider": "Jupay", "origin": "CA", "destination": "GH", "payout_method": "bank_transfer", "url": "https://jupay.co/", "send_amount": 1 },
+  { "provider": "Paysend", "origin": "CA", "destination": "GH", "payout_method": "bank_transfer", "url": "https://paysend.com/en-ca", "send_amount": 1 },
+  { "provider": "Pesa.co", "origin": "CA", "destination": "GH", "payout_method": "bank_transfer", "url": "https://www.pesa.co/", "send_amount": 1 },
+  { "provider": "SendBuddie", "origin": "CA", "destination": "GH", "payout_method": "bank_transfer", "url": "https://www.sendbuddie.com/", "send_amount": 1 },
+  { "provider": "XE", "origin": "CA", "destination": "GH", "payout_method": "reference_rate", "url": "https://www.xe.com/", "send_amount": 1 },
+{ "provider": "CurrencyFlow", "origin": "CA", "destination": "GH", "payout_method": "reference_rate", "url": "https://www.currencyflow.com/", "send_amount": 1 },
+{ "provider": "Xoom", "origin": "CA", "destination": "GH", "payout_method": "bank_transfer", "url": "https://www.xoom.com/ghana/send-money", "send_amount": 1 },
+{ "provider": "RemitBee", "origin": "CA", "destination": "GH", "payout_method": "bank_transfer", "url": "https://www.remitbee.com/send-money/ghana", "send_amount": 1 },
+
+  { "provider": "RemitBee", "origin": "CA", "destination": "GH", "payout_method": "bank_transfer", "url": "https://www.remitbee.com/send-money/ghana", "send_amount": 1 },
+  { "provider": "ACE Money Transfer", "origin": "CA", "destination": "GH", "payout_method": "bank_transfer", "url": "https://acemoneytransfer.com/", "send_amount": 1 },
+  { "provider": "Profee", "origin": "CA", "destination": "GH", "payout_method": "bank_transfer", "url": "https://www.profee.com/", "send_amount": 1 },
+  { "provider": "Pesa.co", "origin": "CA", "destination": "GH", "payout_method": "bank_transfer", "url": "https://www.pesa.co/", "send_amount": 1 },
+  { "provider": "VeloRemit", "origin": "CA", "destination": "GH", "payout_method": "bank_transfer", "url": "https://veloremit.com/en", "send_amount": 1 },
+  { "provider": "AfriChange", "origin": "CA", "destination": "GH", "payout_method": "bank_transfer", "url": "https://africhange.com/", "send_amount": 1 },
+  { "provider": "BanffPay", "origin": "CA", "destination": "GH", "payout_method": "bank_transfer", "url": "https://www.banffpay.com/", "send_amount": 1 }
+]
