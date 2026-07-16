@@ -1085,83 +1085,424 @@ async function handleSendBuddie(page, source) {
 }
 
 async function handleXE(page, source) {
-  await page.goto("https://www.xe.com/send-money/", { waitUntil: "domcontentloaded", timeout: 60000 });
-  await page.waitForTimeout(6000);
-
-  await page.getByRole("button", { name: /Destination country/i }).click({ timeout: 20000 });
-  await page.getByPlaceholder("Filter countries...").fill("gh");
-  await page.getByRole("option", { name: /GH Ghana/i }).click({ timeout: 15000 });
-
-  await page.waitForTimeout(1500);
-
-  await page.getByRole("button", { name: /GBP GBP|CAD CAD/i }).click({ timeout: 20000 });
-
-  const cadOption = page.getByRole("option", { name: /CAD CAD Canadian Dollar/i }).first();
-  if (await cadOption.count()) {
-    await cadOption.click({ timeout: 15000 });
-  } else {
-    await page.keyboard.press("ArrowDown");
-    await page.keyboard.press("Enter");
-  }
-
-  await page.waitForTimeout(4000);
-
-  const bodyText = await page.locator("body").innerText().catch(() => "");
-  saveDebugText(source.provider, bodyText);
-
-  let rate = null;
-  for (const regex of [/CAD\s*=\s*([0-9.]+)\s*GHS/i, /1\s*CAD\s*=\s*([0-9.]+)\s*GHS/i, /\b(8\.1884)\b/i]) {
-    const match = bodyText.match(regex);
-    if (!match) continue;
-    const candidate = parseLocaleNumber(match[1] || match[0]);
-    if (candidate && candidate >= 5 && candidate <= 15) {
-      rate = Number(candidate.toFixed(6));
-      break;
-    }
-  }
-
-  if (!rate) rate = 8.1884;
-
-  return buildResult(source, rate, 0, rate, { verified_method: "xe_ca_gh_send_money" });
-}
-
-async function handleCurrencyFlow(page, source) {
-  await page.goto("https://www.currencyflow.com/", {
+  await page.goto("https://www.xe.com/", {
     waitUntil: "domcontentloaded",
     timeout: 60000,
   });
 
-  await page.waitForTimeout(4000);
+  await page.waitForTimeout(7000);
 
-  await page.locator("#currency-from-live").selectOption("CAD").catch(() => {});
-  await page.locator("#currency-to-live").selectOption("GHS").catch(() => {});
-  await page.waitForTimeout(3000);
+  await page
+    .getByRole("button", {
+      name: "Accept",
+      exact: true,
+    })
+    .click({
+      timeout: 8000,
+      force: true,
+    })
+    .catch(() => {});
 
-  const bodyText = await page.locator("body").innerText();
-  saveDebugText(source.provider, bodyText);
+  const sendLinks = page.getByRole("link", {
+    name: "Send",
+    exact: true,
+  });
 
-  let rate = null;
-  const patterns = [
-    /CAD\s*=\s*([0-9.]+)\s*GHS/i,
-    /1\s*CAD\s*=\s*([0-9.]+)\s*GHS/i,
+  const sendLinkCount = await sendLinks.count();
+
+  if (!sendLinkCount) {
+    const file = await saveScreenshot(
+      page,
+      source.provider
+    );
+
+    throw new Error(
+      `XE Send link was not found. Screenshot: ${file}`
+    );
+  }
+
+  await (
+    sendLinkCount > 1
+      ? sendLinks.nth(1)
+      : sendLinks.first()
+  ).click({
+    timeout: 15000,
+    force: true,
+  });
+
+  await page.waitForTimeout(6000);
+
+  /*
+   * Select Canada first.
+   */
+  const destinationButton = page.getByRole(
+    "button",
+    {
+      name: "Destination country",
+      exact: true,
+    }
+  );
+
+  await destinationButton.waitFor({
+    state: "visible",
+    timeout: 20000,
+  });
+
+  await destinationButton.click({
+    timeout: 15000,
+    force: true,
+  });
+
+  await page.waitForTimeout(1000);
+
+  let canadaSearchCompleted = false;
+
+  for (let attempt = 0; attempt < 5; attempt++) {
+    try {
+      const search = page
+        .getByPlaceholder("Filter countries...")
+        .last();
+
+      await search.waitFor({
+        state: "visible",
+        timeout: 5000,
+      });
+
+      await search.fill("can", {
+        timeout: 5000,
+      });
+
+      canadaSearchCompleted = true;
+      break;
+    } catch (_) {
+      await page.waitForTimeout(600);
+    }
+  }
+
+  if (!canadaSearchCompleted) {
+    await page.keyboard.type("can", {
+      delay: 100,
+    });
+  }
+
+  await page.waitForTimeout(1000);
+
+  await page
+    .getByRole("option", {
+      name: "CA Canada",
+      exact: true,
+    })
+    .click({
+      timeout: 15000,
+      force: true,
+    });
+
+  await page.waitForTimeout(2500);
+
+  /*
+   * The latest flow then changes the destination to Ghana.
+   */
+  await destinationButton.click({
+    timeout: 15000,
+    force: true,
+  });
+
+  await page.waitForTimeout(800);
+
+  let ghanaSearchCompleted = false;
+
+  for (let attempt = 0; attempt < 5; attempt++) {
+    try {
+      const search = page
+        .getByPlaceholder("Filter countries...")
+        .last();
+
+      await search.waitFor({
+        state: "visible",
+        timeout: 5000,
+      });
+
+      await search.fill("gh", {
+        timeout: 5000,
+      });
+
+      ghanaSearchCompleted = true;
+      break;
+    } catch (_) {
+      await page.waitForTimeout(600);
+    }
+  }
+
+  if (!ghanaSearchCompleted) {
+    await page.keyboard.type("gh", {
+      delay: 100,
+    });
+  }
+
+  await page.waitForTimeout(1000);
+
+  await page
+    .getByRole("option", {
+      name: "GH Ghana",
+      exact: true,
+    })
+    .click({
+      timeout: 15000,
+      force: true,
+    });
+
+  await page.waitForTimeout(2500);
+
+  /*
+   * Open the current sending-currency selector.
+   */
+  const currentCurrencyButtons = [
+    page.getByRole("button", {
+      name: "USD USD",
+      exact: true,
+    }),
+
+    page.getByRole("button", {
+      name: /USD\s+USD/i,
+    }),
+
+    page.getByRole("button", {
+      name: /CAD\s+CAD/i,
+    }),
   ];
 
-  for (const regex of patterns) {
-    const match = bodyText.match(regex);
-    if (!match) continue;
-    const candidate = parseLocaleNumber(match[1]);
-    if (candidate && candidate >= 1 && candidate <= 100) {
-      rate = candidate;
+  let currencyButton = null;
+
+  for (const locator of currentCurrencyButtons) {
+    const candidate = locator.first();
+
+    if (
+      await candidate
+        .isVisible({ timeout: 3000 })
+        .catch(() => false)
+    ) {
+      currencyButton = candidate;
       break;
     }
   }
 
-  if (!rate) {
-    const file = await saveScreenshot(page, source.provider);
-    throw new Error(`Could not extract CurrencyFlow rate. Screenshot: ${file}`);
+  if (!currencyButton) {
+    const file = await saveScreenshot(
+      page,
+      source.provider
+    );
+
+    throw new Error(
+      `XE sending-currency selector was not found. Screenshot: ${file}`
+    );
   }
 
-  return buildResult(source, rate, 0, rate);
+  await currencyButton.click({
+    timeout: 15000,
+    force: true,
+  });
+
+  await page.waitForTimeout(800);
+
+  let currencySearchCompleted = false;
+
+  for (let attempt = 0; attempt < 5; attempt++) {
+    try {
+      const search = page
+        .getByPlaceholder("Search currencies...")
+        .last();
+
+      await search.waitFor({
+        state: "visible",
+        timeout: 5000,
+      });
+
+      await search.fill("ca", {
+        timeout: 5000,
+      });
+
+      currencySearchCompleted = true;
+      break;
+    } catch (_) {
+      await page.waitForTimeout(600);
+    }
+  }
+
+  if (!currencySearchCompleted) {
+    await page.keyboard.type("ca", {
+      delay: 100,
+    });
+  }
+
+  await page.waitForTimeout(1000);
+
+  await page
+    .getByRole("option", {
+      name: "CAD CAD Canadian Dollar",
+      exact: true,
+    })
+    .click({
+      timeout: 15000,
+      force: true,
+    });
+
+  await page.waitForTimeout(7000);
+
+  const directRateText = await page
+    .getByText(
+      /CAD\s*=\s*[0-9]+(?:\.[0-9]+)?\s*GHS/i
+    )
+    .first()
+    .innerText()
+    .catch(() => "");
+
+  const bodyText = await page
+    .locator("body")
+    .innerText()
+    .catch(() => "");
+
+  const combinedText =
+    `${directRateText}\n${bodyText}`;
+
+  saveDebugText(
+    source.provider,
+    combinedText
+  );
+
+  const match = combinedText.match(
+    /(?:1\s*)?CAD\s*=\s*([0-9]+(?:\.[0-9]+)?)\s*GHS/i
+  );
+
+  const rate = match
+    ? parseLocaleNumber(match[1])
+    : null;
+
+  if (
+    !rate ||
+    rate < 5 ||
+    rate > 15
+  ) {
+    const file = await saveScreenshot(
+      page,
+      source.provider
+    );
+
+    throw new Error(
+      `Could not extract XE CAD/GHS rate. ` +
+      `Captured text: ${combinedText
+        .replace(/\s+/g, " ")
+        .slice(0, 500)}. ` +
+      `Screenshot: ${file}`
+    );
+  }
+
+  console.log(`XE extracted rate: ${rate}`);
+
+  return buildResult(
+    source,
+    rate,
+    0,
+    rate,
+    {
+      verified_method:
+        "xe_live_cad_ghs_rate",
+    }
+  );
+}
+
+async function handleCurrencyFlow(page, source) {
+  await page.goto(
+    "https://www.currencyflow.com/",
+    {
+      waitUntil: "domcontentloaded",
+      timeout: 60000,
+    }
+  );
+
+  await page.waitForTimeout(5000);
+
+  const fromCurrency = page.getByLabel(
+    "From currency"
+  );
+
+  const toCurrency = page.getByLabel(
+    "To currency"
+  );
+
+  await fromCurrency.waitFor({
+    state: "visible",
+    timeout: 15000,
+  });
+
+  await fromCurrency.selectOption("CAD");
+
+  await toCurrency.waitFor({
+    state: "visible",
+    timeout: 15000,
+  });
+
+  await toCurrency.selectOption("GHS");
+
+  await page.waitForTimeout(5000);
+
+  const directRateText = await page
+    .getByText(
+      /CAD\s*=\s*[0-9]+(?:\.[0-9]+)?\s*GHS/i
+    )
+    .first()
+    .innerText()
+    .catch(() => "");
+
+  const bodyText = await page
+    .locator("body")
+    .innerText()
+    .catch(() => "");
+
+  const combinedText =
+    `${directRateText}\n${bodyText}`;
+
+  saveDebugText(
+    source.provider,
+    combinedText
+  );
+
+  const match = combinedText.match(
+    /(?:1\s*)?CAD\s*=\s*([0-9]+(?:\.[0-9]+)?)\s*GHS/i
+  );
+
+  const rate = match
+    ? parseLocaleNumber(match[1])
+    : null;
+
+  if (
+    !rate ||
+    rate < 5 ||
+    rate > 15
+  ) {
+    const file = await saveScreenshot(
+      page,
+      source.provider
+    );
+
+    throw new Error(
+      `Could not extract CurrencyFlow CAD/GHS rate. ` +
+      `Captured text: ${combinedText
+        .replace(/\s+/g, " ")
+        .slice(0, 400)}. ` +
+      `Screenshot: ${file}`
+    );
+  }
+
+  return buildResult(
+    source,
+    rate,
+    0,
+    rate,
+    {
+      verified_method:
+        "currencyflow_live_cad_ghs_rate",
+    }
+  );
 }
 
 async function handleXoom(page, source) {
